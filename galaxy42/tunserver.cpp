@@ -1215,15 +1215,16 @@ bool run_mode_developer(boost::program_options::variables_map & argm) {
 	const string demoname_default = g_demoname_default;
 	auto demoname = argm["develdemo"].as<string>();
 
-	std::map < string, boost::any > developt;
+	std::map < string, std::function <bool()> > developt;
+
 	developt["foo"] = [](){ _info("TEST FOO"); return false;};
 	developt["bar"] = [](){ _info("TEST BAR");	return false;};
 	developt["serialize"] = [](){ trivialserialize::test_trivialserialize();  return false;};
 	developt["crypto"] = [](){ antinet_crypto::test_crypto();  return false;};
-	developt["route_dij"] = [](boost::program_options::variables_map argm){return developer_tests::wip_galaxy_route_doublestar(argm); };
+	developt["route_dij"] = [&](){return developer_tests::wip_galaxy_route_doublestar(argm);};
 
 	namespace poo = boost::program_options;
-	poo::options_description desc("Possible demos");
+	poo::options_description desc("");
 	desc.add_options()
 					("foo", "foo test")
 					("bar", "bar test")
@@ -1234,24 +1235,29 @@ bool run_mode_developer(boost::program_options::variables_map & argm) {
 
 	if (demoname=="help") {
 		std::cout << "\nAvailable options for --demo NAME (or --devel --develdemo NAME) are following:";
-		std::cout << desc << "\nChoose one of them as the NAME. But type it without the leading -- [TODO]" << std::endl; // TODO(janusz)
-		return false;
+		std::cout << desc << "\nChoose one of them as the NAME. But type it without the leading -- " << std::endl; //
+		std::cin >> demoname;
+		//return false;
 	}
 
 	const string demoname_loaded = demoname_load_conf();
 	if (demoname_loaded != "default") demoname = demoname_loaded;
 	if (demoname=="hardcoded") demoname = demoname_default;
-
-	_note("Demo name selected: [" << demoname << "]");
-	developt[demoname];
-	if (demoname=="foo") { test_foo();  return false; }
-	if (demoname=="bar") { test_bar();  return false; }
-	if (demoname=="serialize") { trivialserialize::test_trivialserialize();  return false; }
-	if (demoname=="crypto") { antinet_crypto::test_crypto();  return false; }
-	if (demoname=="route_dij") { return developer_tests::wip_galaxy_route_doublestar(argm); }
-
-	_warn("Unknown Demo option ["<<demoname<<"] try giving other name, e.g. run program with --develdemo");
-	return false;
+	try {
+		auto it = developt.find(demoname);
+		if(it == developt.end()){
+			_warn("Unknown Demo option ["<<demoname<<"] try giving other name, e.g. run program with --develdemo");
+			return false;
+		}
+		else{
+			_note("Demo name selected: [" << demoname << "]");
+			return developt.at(demoname)();
+		}
+	}
+	catch(std::out_of_range e){
+		std::cout << "\nTEST ERRORn\n";
+		return false;
+	}
 }
 
 int main(int argc, char **argv) {
