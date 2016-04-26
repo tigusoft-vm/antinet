@@ -39,6 +39,7 @@ const char * g_demoname_default = "route_dij";
 #include <iomanip>
 #include <algorithm>
 #include <regex>
+#include <map>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1214,6 +1215,13 @@ bool run_mode_developer(boost::program_options::variables_map & argm) {
 	const string demoname_default = g_demoname_default;
 	auto demoname = argm["develdemo"].as<string>();
 
+	std::map < string, boost::any > developt;
+	developt["foo"] = [](){ _info("TEST FOO"); return false;};
+	developt["bar"] = [](){ _info("TEST BAR");	return false;};
+	developt["serialize"] = [](){ trivialserialize::test_trivialserialize();  return false;};
+	developt["crypto"] = [](){ antinet_crypto::test_crypto();  return false;};
+	developt["route_dij"] = [](boost::program_options::variables_map argm){return developer_tests::wip_galaxy_route_doublestar(argm); };
+
 	namespace poo = boost::program_options;
 	poo::options_description desc("Possible demos");
 	desc.add_options()
@@ -1235,7 +1243,7 @@ bool run_mode_developer(boost::program_options::variables_map & argm) {
 	if (demoname=="hardcoded") demoname = demoname_default;
 
 	_note("Demo name selected: [" << demoname << "]");
-
+	developt[demoname];
 	if (demoname=="foo") { test_foo();  return false; }
 	if (demoname=="bar") { test_bar();  return false; }
 	if (demoname=="serialize") { trivialserialize::test_trivialserialize();  return false; }
