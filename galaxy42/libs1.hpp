@@ -26,6 +26,8 @@
 #include <iomanip>
 #include <unordered_set>
 
+#define OPTION_DISABLE_DEBUG 1 // <--- disable debug
+
 #include "c_tnetdbg.hpp"
 
 using std::string;

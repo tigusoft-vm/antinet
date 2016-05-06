@@ -6,6 +6,8 @@
 
 /// This macros will be moved later to glorious-cpp library or other
 
+#ifndef OPTION_DISABLE_DEBUG
+
 #define _dbg3(X) do{}while(0)
 // do { ::std::cerr<<"dbg3: " << __FILE__ << "+" << __LINE__ << " " << X << ::std::endl; } while(0)
 
@@ -13,6 +15,17 @@
 #define _dbg1(X) do { ::std::cerr<<"dbg1: " << __FILE__ << "+" << __LINE__ << " " << X << ::std::endl; } while(0)
 #define _info(X) do { ::std::cerr<<"\033[94minfo: " << __FILE__ << "+" << __LINE__ << " " << X << "\033[0m" << ::std::endl; } while(0)	///< blue esc code
 #define _note(X) do { ::std::cerr<<"note: " << __FILE__ << "+" << __LINE__ << " " << X << ::std::endl; } while(0)
+
+#else
+
+#define _dbg3(X) do{}while(0)
+#define _dbg2(X) do{}while(0)
+#define _dbg1(X) do{}while(0)
+#define _info(X) do{}while(0)
+#define _note(X) do{}while(0)
+
+#endif
+
 /// yellow code
 #define _warn(X) do { \
 	::std::cerr<<"\033[93m\n"; for (int i=0; i<70; ++i) ::std::cerr<<'!'; ::std::cerr<<::std::endl; \
@@ -24,11 +37,16 @@
 	::std::cerr<<"ERRO! " << __FILE__ << "+" << __LINE__ << " " << X << ::std::endl; \
 	::std::cerr<<"\n\n"; for (int i=0; i<70; ++i) ::std::cerr<<'!'; ::std::cerr<<"\033[0m"<<::std::endl; \
 } while(0)
+
+#ifndef OPTION_DISABLE_DEBUG
 #define _mark(X) do { \
 	::std::cerr<<"\n\n"; for (int i=0; i<70; ++i) ::std::cerr<<'='; ::std::cerr<<::std::endl; \
 	::std::cerr<<"MARK* " << __FILE__ << "+" << __LINE__ << " " << X << ::std::endl; \
 	::std::cerr<<"\n\n"; for (int i=0; i<70; ++i) ::std::cerr<<'='; ::std::cerr<<::std::endl; \
 	} while(0)
+#else
+#define _mark(X) do{}while(0)
+#endif
 
 // TODO this is not really "debug", move to other file
 #define _UNUSED(x) (void)(x)
