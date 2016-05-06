@@ -39,14 +39,14 @@ void c_multikeys_pub::update_hash() const {
 std::string c_multikeys_pub::serialize_bin() const { ///< returns a string with all our data serialized, to a binary format
 	trivialserialize::generator gen(100);
 
-	/** 
+	/**
 	A sparse "map" of keys type => of vectors of strings
 
-	format: there are 2 types of keys: ( 
-		keys type 5:  ( 3 keys of this type: varstr varstr varstr )  
-		keys type 42: ( 2 keys of this type: varstr varstr ) )  
+	format: there are 2 types of keys: (
+		keys type 5:  ( 3 keys of this type: varstr varstr varstr )
+		keys type 42: ( 2 keys of this type: varstr varstr ) )
 
-	format: 2 ( 5 ( 3 varstr varstr varstr )  42 ( 2 varstr varstr ) )  
+	format: 2 ( 5 ( 3 varstr varstr varstr )  42 ( 2 varstr varstr ) )
 
 Example (as of commit after d3b9872f758a90541dde8fc2cf45a97b691e1a17)
 Serialized pubkeys: [(104)[
@@ -73,7 +73,7 @@ Serialized pubkeys: [(104)[
 	int used_types_check=0; // counter just to assert
 	for (unsigned int ix=0; ix<m_cryptolists_pubkey.size(); ++ix) { // for all key type (for each element)
 		const vector<string> & pubkeys_of_this_system  = m_cryptolists_pubkey.at(ix); // take vector of keys
-		if (pubkeys_of_this_system.size()) { // save them this time 
+		if (pubkeys_of_this_system.size()) { // save them this time
 			++used_types_check;
 			assert(ix < std::numeric_limits<unsigned char>::max()); // save the type
 			gen.push_byte_u(  t_crypto_system_type_to_ID(ix) ); // save key type
@@ -248,18 +248,20 @@ bool alltests() {
 
 // TODO(janek): case as enum name . warning: new enum types added
 // TODO(janek) fix identation
-		std::string t_crypto_system_type_to_name(int val) {
-			switch(val) {
-				case 1:			return "X25519";
-				case 2:			return "Ed25519";
-				case 3:     return "ntru128";
-				case 4:			return "geport_todo";
-				case 5:			return "symhash_todo";
-				case 6:			return "multikey";
-					//default:		return "Wrong type";
-			}
-			return "UNKNOWN";
-		}
+std::string t_crypto_system_type_to_name(t_crypto_system_type t_type) {
+	switch(t_type) {
+		case e_crypto_system_type_invalid          : return "Invalid Type";
+		case e_crypto_system_type_X25519           : return "X25519";
+		case e_crypto_system_type_Ed25519          : return "Ed25519";
+		case e_crypto_system_type_ntru             : return "ntru";
+		case e_crypto_system_type_SIDH             : return "SIDH";
+		case e_crypto_system_type_geport_todo      : return "geport_todo";
+		case e_crypto_system_type_symhash_todo     : return "symhash_todo";
+		case e_crypto_system_type_multikey_private : return "multikey_private";
+		case e_crypto_system_type_multikey_pub     : return "multikey_pub";
+		default                                    : return "Wrong type";
+	}
+}
 
 char t_crypto_system_type_to_ID(int val) {
 	switch(val) {
@@ -289,7 +291,8 @@ void c_multikeys_PAIR::debug() const {
 	for (unsigned long ix=0; ix<m_pub.m_cryptolists_pubkey.size(); ++ix) {
 		const auto & pubkeys_of_this_system  = m_pub. m_cryptolists_pubkey. at(ix);
 		const auto & PRIVkeys_of_this_system = m_PRIV.m_cryptolists_PRIVkey.at(ix);
-		_info("Cryptosystem: " << t_crypto_system_type_to_name(ix) );
+		if(!m_pub.m_cryptolists_pubkey[ix].empty())
+			_info("Cryptosystem: " << t_crypto_system_type_to_name(t_crypto_system_type(ix)));
 		for(size_t iy=0; iy < m_pub.m_cryptolists_pubkey[ix].size(); ++iy){
 			_info("  PUB:" << m_pub.m_cryptolists_pubkey[ix].at(iy) );
 			_info("  PRIV:"<< m_PRIV.m_cryptolists_PRIVkey[ix].at(iy) << "\n");
@@ -412,16 +415,17 @@ void test_crypto() {
 	// Alice:
 	c_multikeys_PAIR keypairA;
 	keypairA.generate();
+	keypairA.debug();
 
 	// Bob:
 	c_multikeys_PAIR keypairB;
 	keypairB.generate();
+	keypairB.debug();
 
 	c_multikeys_pub keypubB = keypairB.m_pub;
 
 	// Create KCT and CT (CTE?)
 	c_crypto_tunnel AliceCT(keypairA, keypubB);
-
 	return ;
 
 #if 0
