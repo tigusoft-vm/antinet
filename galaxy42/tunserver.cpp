@@ -236,7 +236,7 @@ class c_routing_manager { ///< holds knowledge about routes, and searches for ne
 				void execute( c_galaxy_node & galaxy_node );
 		};
 
-		
+
 
 		// searches:
 		typedef std::map< c_haship_addr, unique_ptr<c_route_search> > t_route_search_by_dst; ///< running searches, by the hash-ip of finall destination
@@ -373,7 +373,7 @@ const c_routing_manager::c_route_info & c_routing_manager::get_route_or_maybe_se
 		_info("Direct route: " << route_info);
 		const auto & route_info_ref_we_own = this -> add_route_info_and_return( dst , route_info ); // store it, so that we own this object
 		return route_info_ref_we_own; // <--- return direct
-	} 
+	}
 	catch(expected_not_found) { } // not found in direct peers
 
 	auto found = m_route_nexthop.find( dst ); // <--- search what we know
@@ -826,7 +826,10 @@ void c_tunserver::event_loop() {
 
 			int proto_version = static_cast<int>( static_cast<unsigned char>(buf[0]) ); // TODO
 			_assert(proto_version >= c_protocol::current_version ); // let's assume we will be backward compatible (but this will be not the case untill official stable version probably)
+
 			c_protocol::t_proto_cmd cmd = static_cast<c_protocol::t_proto_cmd>( buf[1] );
+			while( m_peer.size() == 0  && cmd != c_protocol::e_proto_cmd_public_hi) // waiting for first peer
+				proto_version = static_cast<int>( static_cast<unsigned char>(buf[0]) );
 
 			// recognize the peering HIP/CA (cryptoauth is TODO)
 			c_haship_addr sender_hip;
@@ -969,8 +972,8 @@ void c_tunserver::event_loop() {
 
 						auto data = gen.str();
 
-						_info("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD Will send data to sender_as_peering_ptr=" 
-							<< sender_as_peering_ptr 
+						_info("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD Will send data to sender_as_peering_ptr="
+							<< sender_as_peering_ptr
 							<< " data: " << string_as_dbg( string_as_bin(data) ).get() );
 						auto peer_udp = dynamic_cast<c_peering_udp*>( sender_as_peering_ptr ); // upcast to UDP peer derived
 						peer_udp->send_data_udp_cmd(c_protocol::e_proto_cmd_findhip_reply, string_as_bin(data), m_sock_udp); // <---
@@ -994,7 +997,7 @@ void c_tunserver::event_loop() {
 				c_haship_addr given_goal_hip( c_haship_addr::tag_constr_by_addr_bin(), string_as_bin( parser.pop_bytes_n( g_haship_addr_size ) ) ); // hip
 				parser.pop_byte_skip(';');
 				_info("We have a TTL reply: ttl="<<given_ttl<<" goal="<<given_goal_hip<<" cost="<<given_cost);
-				
+
 				auto data_route_ttl = given_ttl - 1;
 				const int limit_incoming_ttl = c_protocol::ttl_max_accepted;
 				if (data_route_ttl > limit_incoming_ttl) {
@@ -1142,12 +1145,12 @@ bool wip_galaxy_route_doublestar(boost::program_options::variables_map & argm) {
 
 } // namespace developer_tests
 
-/*** 
+/***
 @brief Run the main developer test in this code version (e.g. on this code branch / git branch)
 @param argm - map with program options, it CAN BE MODIFIED here, e.g. the test can be to set some options and let the program continue
 @return false if the program should quit after this test
 */
-bool run_mode_developer(boost::program_options::variables_map & argm) { 
+bool run_mode_developer(boost::program_options::variables_map & argm) {
 	std::cerr << "Running in developer mode. " << std::endl;
 
 	// test_trivialserialize();  return false;
