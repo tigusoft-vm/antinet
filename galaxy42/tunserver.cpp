@@ -828,9 +828,11 @@ void c_tunserver::event_loop() {
 			_assert(proto_version >= c_protocol::current_version ); // let's assume we will be backward compatible (but this will be not the case untill official stable version probably)
 
 			c_protocol::t_proto_cmd cmd = static_cast<c_protocol::t_proto_cmd>( buf[1] );
-			while( m_peer.size() == 0  && cmd != c_protocol::e_proto_cmd_public_hi) // waiting for first peer
+			while( m_peer.size() == 0  && cmd != c_protocol::e_proto_cmd_public_hi) { // waiting for first peer
+				size_read = read(m_tun_fd, buf, sizeof(buf));
 				proto_version = static_cast<int>( static_cast<unsigned char>(buf[0]) );
-
+				cmd = static_cast<c_protocol::t_proto_cmd>( buf[1] );
+			}
 			// recognize the peering HIP/CA (cryptoauth is TODO)
 			c_haship_addr sender_hip;
 			c_peering * sender_as_peering_ptr  = nullptr; // TODO(r)-security review usage of this, and is it needed
