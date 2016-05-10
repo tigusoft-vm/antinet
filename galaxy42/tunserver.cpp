@@ -728,7 +728,7 @@ void c_tunserver::event_loop() {
 
 
 	this->peering_ping_all_peers();
-	const auto ping_all_frequency = std::chrono::seconds( 600 ); // how often to ping them
+	const auto ping_all_frequency = std::chrono::seconds( 1 ); // how often to ping them
 	const auto ping_all_frequency_low = std::chrono::seconds( 1 ); // how often to ping first few times
 	const long int ping_all_count_low = 2; // how many times send ping fast at first
 
@@ -749,7 +749,8 @@ void c_tunserver::event_loop() {
 
 		{
 			auto freq = ping_all_frequency;
-			if (ping_all_count < ping_all_count_low) freq = ping_all_frequency_low;
+			if (ping_all_count < ping_all_count_low)
+				freq = ping_all_frequency_low;
 			if (time_now > ping_all_time_last + freq ) {
 				_note("It's time to ping all peers again (at auto-pinging time frequency=" << std::chrono::duration_cast<std::chrono::seconds>(freq).count() << " seconds)");
 				peering_ping_all_peers(); // TODO(r) later ping only peers that need that
@@ -826,13 +827,8 @@ void c_tunserver::event_loop() {
 
 			int proto_version = static_cast<int>( static_cast<unsigned char>(buf[0]) ); // TODO
 			_assert(proto_version >= c_protocol::current_version ); // let's assume we will be backward compatible (but this will be not the case untill official stable version probably)
-
 			c_protocol::t_proto_cmd cmd = static_cast<c_protocol::t_proto_cmd>( buf[1] );
-			while( m_peer.size() == 0  && cmd != c_protocol::e_proto_cmd_public_hi) { // waiting for first peer
-				size_read = read(m_tun_fd, buf, sizeof(buf));
-				proto_version = static_cast<int>( static_cast<unsigned char>(buf[0]) );
-				cmd = static_cast<c_protocol::t_proto_cmd>( buf[1] );
-			}
+
 			// recognize the peering HIP/CA (cryptoauth is TODO)
 			c_haship_addr sender_hip;
 			c_peering * sender_as_peering_ptr  = nullptr; // TODO(r)-security review usage of this, and is it needed
