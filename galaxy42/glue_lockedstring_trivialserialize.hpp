@@ -19,6 +19,7 @@ template <> void obj_serialize<sodiumpp::locked_string>(const sodiumpp::locked_s
 
 template <> sodiumpp::locked_string obj_deserialize<sodiumpp::locked_string>(parser & parser);
 
+
 }	// namespace trivialserialize
 #endif
 
