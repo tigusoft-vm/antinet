@@ -10,6 +10,7 @@ using std::min; using std::max;
 const float EPSI=0.0001;
 
 // #define _info(X) do { std::cerr<<X<<std::endl; } while(0)
+#define THROW(X) do { _erro("Error, will throw: " << X); throw std::runtime_error("error"); } while(0)
 #define check(X) do { if (!(X)) { std::cout<<"Failed check assert in " << __LINE__ << " " << __FILE__ << std::endl; \
 	throw std::runtime_error("Failed check"); } } while(0)
 #define BEGINEND(X) X.begin(),X.end()
@@ -50,7 +51,9 @@ struct P { float x, y;
 	P norm() const { auto l=dist({0,0}); if (fabs(l)<EPSI) return {0,0}; return {x/l,y/l}; }
 };
 ostream& operator<<(ostream&ostr, const P &obj) { return ostr<<obj.x<<' '<<obj.y<<endl; }
+istream& operator>>(istream&ostr, P &obj) { return ostr>>obj.x>>     obj.y; }
 
+class WORLD;
 typedef enum  { e_red, e_mark } t_flag;
 struct NODE {
 	P p,move; int lev; size_t savenr;
@@ -70,10 +73,7 @@ struct NODE {
 	void write(ostream &ostr) const {
 		ostr << savenr <<' '<< p <<' '<< move <<' '<< lev <<' ';
 		ostr<<endl<<peer.size()<<'\t'<<endl; for(const auto &ptr:peer) { ostr<<ptr.lock()->savenr<<' '; } ostr<<endl; }
-	void load(istream &istr,int stage) {
-		istr << savenr <<      p <<      move <<      lev ;
-		...TODO-NOW... // TODO
-	}
+	void load(istream &istr,int stage,WORLD *w);
 };
 ostream& operator<<(ostream&ostr, const NODE &obj) { obj.write(ostr); return ostr; }
 
@@ -107,9 +107,18 @@ struct WORLD { vector<SPtr<NODE>> nodes;
 	}
 	void load() { for (int stage=0; stage<=1; ++stage) { std::ifstream ff("data.sim");
 		size_t size; ff>>size;
-		for(size_t i=0;i<size;++i) { auto newobj=make_shared<NODE>(); newobj->load(ff,stage); }
+		for(size_t i=0;i<size;++i) { auto newobj=make_shared<NODE>(); newobj->load(ff,stage,this); }
 	} }
+	SPtr<NODE> byid(int id) const { for(const auto &ptr:nodes){ if(ptr->savenr==id) return ptr;} THROW("No node id="<<id); }
 };
+
+void NODE::load(istream &istr,int stage,WORLD *w) {
+	istr >> savenr >>      p >>      move >>      lev ;
+	size_t peer_size; istr >> peer_size; for(size_t i=0;i<peer_size;++i) { 
+		int peer_savenr;  istr >> peer_savenr;
+		if (stage==1) link(w->byid(peer_savenr));
+	}
+}
 
 WORLD * world=nullptr;
 
@@ -137,11 +146,11 @@ bool c_simulation::routingdemo_main() {
 		if (m_gui->m_key[KEY_ESC]) { _note ("User exits)"); m_goodbye = true; }
 		if (m_gui->m_key[KEY_ENTER]) { _note ("User exits - but do it again)"); m_goodbye = true; do_it_again=true; rest(10); }
 
-		for (int step=0; step<5; ++step) {
+		for (int step=0; step<1; ++step) {
 		for(auto obj1 : world->nodes) obj1->move=P({0,0});
 		if (xkey[KEY_1]) for(auto obj1 : world->nodes) { for(auto obj2 : world->nodes) { if (obj1==obj2) continue; // avoid nodes collision
 			auto p1=obj1->p, p2=obj2->p; auto d=obj1->p.dist(obj2->p);  if (fabs(d)<7) { obj1->jumpaway(); continue; }
-			if (d>30) continue; auto s=10/clamp(d,5,30); obj1->move += (p1-p2).norm() * pow(s,2);
+			if (d>30) continue; auto s=10/clamp(d,5,30); obj1->move += (p1-p2).norm() * ( pow(s,2)*5 + s );
 		} }
 		if (xkey[KEY_2]) for(auto obj1 : world->nodes) { for(auto obj2w : obj1->peer) { auto obj2=obj2w.lock(); check( obj1 != obj2); // pull peers
 			auto p1=obj1->p, p2=obj2->p; auto d=obj1->p.dist(obj2->p);  if (fabs(d)<7) { obj1->jumpaway(); continue; }
@@ -162,7 +171,7 @@ bool c_simulation::routingdemo_main() {
 		} // step
 
 		for(auto obj1 : world->nodes) obj1->draw(frame);
-		scare_mouse();  blit (m_frame, m_screen, 0, 0, 0, 0, m_frame->w, m_frame->h);  unscare_mouse();	rest(1);
+		scare_mouse();  blit (m_frame, m_screen, 0, 0, 0, 0, m_frame->w, m_frame->h);  unscare_mouse();	// rest(1);
 	} catch(...) { _erro("Main loop - exception"); throw;	} }
 	world->save();
 
