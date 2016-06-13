@@ -105,9 +105,9 @@ struct WORLD { vector<SPtr<NODE>> nodes;
 	void save() {		std::ofstream ff("data.sim"); ff<<nodes.size()<<endl;
 		size_t s=0; for(auto ptr:nodes) ptr->savenr=(s++);  for(auto ptr:nodes) ff<<(*ptr);
 	}
-	void load() { for (int stage=0; stage<=1; ++stage) { std::ifstream ff("data.sim");
-		size_t size; ff>>size;
-		for(size_t i=0;i<size;++i) { auto newobj=make_shared<NODE>(); newobj->load(ff,stage,this); }
+	void load(string fn="data.sim") { for (int stage=0; stage<=1; ++stage) { std::ifstream ff(fn.c_str());
+		size_t size; ff>>size;  _info("Load stage="<<stage<<" size="<<size);
+		for(size_t i=0;i<size;++i) { auto newobj=make_shared<NODE>(); newobj->load(ff,stage,this); nodes.push_back(newobj); }
 	} }
 	SPtr<NODE> byid(int id) const { for(const auto &ptr:nodes){ if(ptr->savenr==id) return ptr;} THROW("No node id="<<id); }
 };
@@ -136,9 +136,10 @@ bool c_simulation::routingdemo_main() {
 	auto & frame = m_frame; m_goodbye=false;
 
 	world = new WORLD;
-	auto world_root = world->grow(P{600,500},1,300);
-	world->grow(P{1200,500},1,300);
-	world_root->flag.insert(e_red);
+	// auto world_root = world->grow(P{600,500},1,300);
+	// world->grow(P{1200,500},1,300);
+	// world_root->flag.insert(e_red);
+	world->load("data1.sim");
 
 	while (!m_goodbye && !close_button_pressed) {	try {
 		process_input(); auto &xkey=m_gui->m_key; // int allegro_char = 0;	if (keypressed()) { allegro_char = readkey(); }
@@ -166,14 +167,14 @@ bool c_simulation::routingdemo_main() {
 			break;
 			}
 		}
-		if (xkey[KEY_4]) if (rand1in(100)) { world->node_any()->link( world->node_any() ); }
+		if (xkey[KEY_4]) if (rand1in(20)) { world->node_any()->link( world->node_any() ); }
 
 		} // step
 
 		for(auto obj1 : world->nodes) obj1->draw(frame);
 		scare_mouse();  blit (m_frame, m_screen, 0, 0, 0, 0, m_frame->w, m_frame->h);  unscare_mouse();	// rest(1);
 	} catch(...) { _erro("Main loop - exception"); throw;	} }
-	world->save();
+	//world->save();
 
 	delete world; world=nullptr;
 	return do_it_again;
